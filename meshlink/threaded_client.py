@@ -8,8 +8,6 @@ from transfer import send_file, receive_file
 from file_metadata import decode_metadata
 
 PORT = 5000
-
-send_lock = threading.Lock()
 DOWNLOAD_DIR = "downloads"
 
 
@@ -42,49 +40,53 @@ def receive_messages(sock):
         print(f"\nReceive error: {exc}")
 
 
-HOST = input("Enter host IP (127.0.0.1 for same computer): ")
+def run_client(host):
+    send_lock = threading.Lock()
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client.connect((HOST, PORT))
+    try:
+        client.connect((host, PORT))
+        print(f"Connected to {host}:{PORT}")
+        print("Type a message, /send <file_path>, or /quit.")
 
-print("Connected! Type a message, /send <file_path>, or /quit.")
+        thread = threading.Thread(
+            target=receive_messages,
+            args=(client,),
+            daemon=True,
+        )
+        thread.start()
 
-thread = threading.Thread(
-    target=receive_messages,
-    args=(client,),
-    daemon=True,
-)
-thread.start()
+        while True:
+            command = input("You: ").strip()
 
-try:
-    while True:
-        command = input("You: ").strip()
+            if command == "/quit":
+                break
 
-        if command == "/quit":
-            break
+            if command.startswith("/send "):
+                file_path = command[len("/send "):].strip()
 
-        if command.startswith("/send "):
-            file_path = command[len("/send "):].strip()
+                if not os.path.isfile(file_path):
+                    print("File not found:", file_path)
+                    continue
 
-            if not os.path.isfile(file_path):
-                print("File not found:", file_path)
+                try:
+                    send_file(client, file_path, send_lock)
+                except (OSError, ConnectionError, ValueError) as exc:
+                    print("File send failed:", exc)
+
                 continue
 
-            try:
-                send_file(client, file_path, send_lock)
-            except (OSError, ConnectionError, ValueError) as exc:
-                print("File send failed:", exc)
+            if command:
+                with send_lock:
+                    send_packet(
+                        client, CHAT, command.encode("utf-8")
+                    )
 
-            continue
+    finally:
+        client.close()
+        print("Chat closed.")
 
-        if command:
-            with send_lock:
-                send_packet(
-                    client,
-                    CHAT,
-                    command.encode("utf-8"),
-                )
 
-finally:
-    client.close()
-    print("Chat closed.")
+if __name__ == "__main__":
+    host = input("Enter host IP: ")
+    run_client(host)

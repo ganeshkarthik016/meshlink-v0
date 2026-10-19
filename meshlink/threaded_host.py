@@ -9,8 +9,6 @@ from file_metadata import decode_metadata
 
 HOST = "0.0.0.0"
 PORT = 5000
-
-send_lock = threading.Lock()
 DOWNLOAD_DIR = "downloads"
 
 
@@ -43,49 +41,64 @@ def receive_messages(conn):
         print(f"\nReceive error: {exc}")
 
 
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-server.bind((HOST, PORT))
-server.listen(1)
+def run_host():
+    send_lock = threading.Lock()
 
-print(f"Waiting for a connection on port {PORT}...")
-conn, addr = server.accept()
-print(f"Connected to {addr}")
-print("Type a message, /send <file_path>, or /quit.")
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-thread = threading.Thread(
-    target=receive_messages,
-    args=(conn,),
-    daemon=True,
-)
-thread.start()
+    conn = None
 
-try:
-    while True:
-        command = input("You: ").strip()
+    try:
+        server.bind((HOST, PORT))
+        server.listen(1)
 
-        if command == "/quit":
-            break
+        print(f"Waiting for a connection on port {PORT}...")
+        conn, addr = server.accept()
 
-        if command.startswith("/send "):
-            file_path = command[len("/send "):].strip()
+        print(f"Connected to {addr}")
+        print("Type a message, /send <file_path>, or /quit.")
 
-            if not os.path.isfile(file_path):
-                print("File not found:", file_path)
+        thread = threading.Thread(
+            target=receive_messages,
+            args=(conn,),
+            daemon=True,
+        )
+        thread.start()
+
+        while True:
+            command = input("You: ").strip()
+
+            if command == "/quit":
+                break
+
+            if command.startswith("/send "):
+                file_path = command[len("/send "):].strip()
+
+                if not os.path.isfile(file_path):
+                    print("File not found:", file_path)
+                    continue
+
+                try:
+                    send_file(conn, file_path, send_lock)
+                except (OSError, ConnectionError, ValueError) as exc:
+                    print("File send failed:", exc)
+
                 continue
 
-            try:
-                send_file(conn, file_path, send_lock)
-            except (OSError, ConnectionError, ValueError) as exc:
-                print("File send failed:", exc)
+            if command:
+                with send_lock:
+                    send_packet(
+                        conn, CHAT, command.encode("utf-8")
+                    )
 
-            continue
+    finally:
+        if conn is not None:
+            conn.close()
 
-        if command:
-            with send_lock:
-                send_packet(conn, CHAT, command.encode("utf-8"))
+        server.close()
+        print("Chat closed.")
 
-finally:
-    conn.close()
-    server.close()
-    print("Chat closed.")
+
+if __name__ == "__main__":
+    run_host()

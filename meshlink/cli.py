@@ -30,10 +30,12 @@ def main():
     args = parser.parse_args()
 
     if args.command == "host":
-        print("Host command selected")
+        from threaded_host import run_host
+        run_host()
 
     elif args.command == "connect":
-        print(f"Connect command selected: {args.ip}")
+        from threaded_client import run_client
+        run_client(args.ip)
 
 
 if __name__ == "__main__":
