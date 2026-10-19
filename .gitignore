@@ -2,3 +2,20 @@
 __pycache__/
 downloads/
 !downloads/.gitkeep
+
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+
+# Build artifacts
+build/
+dist/
+
+# Test and local files
+.pytest_cache/
