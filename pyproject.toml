@@ -1,0 +1,17 @@
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "meshlink-p2p"
+version = "0.1.0"
+description = "Peer-to-peer chat and file sharing"
+requires-python = ">=3.10"
+
+[project.scripts]
+meshlink = "cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "meshlink"}
+py-modules = ["cli"]
