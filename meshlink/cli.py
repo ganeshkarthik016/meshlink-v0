@@ -11,7 +11,7 @@ def main():
     parser.add_argument(
         "--version",
         action="version",
-        version="meshlink 0.1.0",
+        version="meshlink 0.0.1",
     )
 
     subparsers = parser.add_subparsers(

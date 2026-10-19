@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "meshlink-p2p"
-version = "0.0.0"
+version = "0.0.1"
 description = "Peer-to-peer chat and file sharing"
 requires-python = ">=3.10"
 
