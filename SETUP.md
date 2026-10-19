@@ -11,11 +11,9 @@ This guide explains how to install and run Meshlink on Linux and Windows.
 
 ## 1. Clone the Repository
 
-Replace `YOUR_REPOSITORY_URL` with the URL of your GitHub repository.
-
 ```bash
-git clone YOUR_REPOSITORY_URL
-cd p2p_av0
+git clone https://github.com/ganeshkarthik016/meshlink-v0.git
+cd meshlink-v0
 ```
 
 ## 2. Linux Setup
